@@ -118,7 +118,7 @@ public class Main extends Application {
         try {
             fileIS = new FileInputStream(file);
             CipherAlg ideaDe = new Idea(IOUtils.toInputStream(CRYPT_KEY), false);
-            ByteArrayOutputStream buffer = (ByteArrayOutputStream) ideaDe.crypt(fileIS);
+            ByteArrayOutputStream buffer = (ByteArrayOutputStream) ideaDe.encrypt(fileIS);
             code = buffer.toString();
         } catch (IOException e) {
             log.log(Level.ERROR, "Error during decryption", e);
@@ -135,7 +135,7 @@ public class Main extends Application {
             }
             fileOS = new FileOutputStream(file);
             CipherAlg ideaEn = new Idea(IOUtils.toInputStream(CRYPT_KEY), true);
-            ByteArrayOutputStream buffer = (ByteArrayOutputStream) ideaEn.crypt(IOUtils.toInputStream(code));
+            ByteArrayOutputStream buffer = (ByteArrayOutputStream) ideaEn.encrypt(IOUtils.toInputStream(code));
             buffer.writeTo(fileOS);
         } catch (IOException e) {
             log.log(Level.ERROR, "Error during writing data to file", e);
