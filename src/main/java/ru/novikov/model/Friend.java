@@ -3,9 +3,6 @@ package ru.novikov.model;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
-/**
- * Created by Андрей on 12.10.2016.
- */
 public class Friend {
 
     private final StringProperty firstName;
@@ -29,7 +26,6 @@ public class Friend {
     }
 
     public String getFirstName() {
-
         return firstName.get();
     }
 

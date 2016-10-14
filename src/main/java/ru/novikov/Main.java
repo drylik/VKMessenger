@@ -28,34 +28,34 @@ import ru.novikov.model.Friend;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class Main extends Application {
 
     private static Logger log = LogManager.getLogger(Main.class.getName());
 
-    private UserActor actor;
+    private String token;
+    private Integer userId;
 
     private Stage primaryStage;
     private BorderPane rootLayout;
     private ObservableList<Friend> friends = FXCollections.observableArrayList();
 
     public Main() throws FileNotFoundException {
-        //TODO: получить от vk список друзей и добавить их в friends
         TransportClient transportClient = HttpTransportClient.getInstance();
         VkApiClient vk = new VkApiClient(transportClient);
-        connectToVK(vk);
-        int a = 0;
-        GetResponse getResponse = null;
+        UserActor actor = connectToVK(vk);
+        GetResponse response;
         List<UserXtrCounters> friendsList = null;
         try {
-            getResponse = vk.friends().get(actor).execute();
-            List<String> userIds = new ArrayList<>(getResponse.getCount());
-            for (Object o : getResponse.getItems()) {
+            response = vk.friends().get(actor).execute();
+            List<String> userIds = new ArrayList<>(response.getCount());
+            for (Object o : response.getItems()) {
                 userIds.add(String.valueOf(o));
             }
             friendsList = vk.users().get(actor).userIds(userIds).execute();
+        } catch (NullPointerException e){
+            log.log(Level.ERROR, "Error during connecting to VK", e);
         } catch (ApiException e) {
             log.log(Level.ERROR, "Api error during getting a response", e);
         } catch (ClientException e) {
@@ -68,8 +68,6 @@ public class Main extends Application {
             }
         }
     }
-
-
 
     @Override
     public void start(Stage primaryStage) {
@@ -134,50 +132,53 @@ public class Main extends Application {
         launch(args);
     }
 
-    public void connectToVK(VkApiClient vk) {
-        //TODO: establish saving data
-        AuthResponse authResponse = null;
+    private UserActor connectToVK(VkApiClient vk) {
+        AuthResponse authResponse;
         String code;
-        //actor = readActor();
-        actor = null;
+        token = null;
+        userId = null;
+        readData();
         try {
-            if (actor == null) {
+            if (token == null || userId == null) {
                 code = showLoginDialog();
                 if (code != null) {
                     authResponse = vk.oauth()
                             .userAuthorizationCodeFlow(VK.APP_ID, VK.CLIENT_SECRET, VK.REDIRECT_URI, code)
                             .execute();
-                    actor = new UserActor(authResponse.getUserId(), authResponse.getAccessToken());
-                    //writeActor(actor);
+                    token = authResponse.getAccessToken();
+                    userId = authResponse.getUserId();
+                    writeData();
                 }
             }
-        } catch (ApiException | ClientException e) {
-            log.log(Level.ERROR, "Error during connecting to vk", e);
+            return new UserActor(userId, token);
+        } catch (ApiException e) {
+            log.log(Level.ERROR, "Api error during connecting to vk", e);
+        } catch (ClientException e) {
+            log.log(Level.ERROR, "Client error during connecting to vk", e);
         }
-
-
+        return null;
     }
 
-    private String readActor() {
-        String code;
+    private void readData() {
+        String data;
         File file = new File(VK.FILE_NAME);
         if (!file.exists()) {
-            return null;
+            return;
         }
         InputStream fileIS;
         try {
             fileIS = new FileInputStream(file);
             CipherAlg ideaDe = new Idea(IOUtils.toInputStream(VK.CRYPT_KEY), false);
             ByteArrayOutputStream buffer = (ByteArrayOutputStream) ideaDe.encrypt(fileIS);
-            code = buffer.toString();
+            data = buffer.toString();
+            token = data.split(" ")[0];
+            userId = new Integer(data.split(" ")[1]);
         } catch (IOException e) {
             log.log(Level.ERROR, "Error during decryption", e);
-            return null;
         }
-        return code;
     }
 
-    private void writeActor(String code) {
+    private void writeData() {
         File file = new File(VK.FILE_NAME);
         OutputStream fileOS;
         try {
@@ -186,7 +187,7 @@ public class Main extends Application {
             }
             fileOS = new FileOutputStream(file);
             CipherAlg ideaEn = new Idea(IOUtils.toInputStream(VK.CRYPT_KEY), true);
-            ByteArrayOutputStream buffer = (ByteArrayOutputStream) ideaEn.encrypt(IOUtils.toInputStream(code));
+            ByteArrayOutputStream buffer = (ByteArrayOutputStream) ideaEn.encrypt(IOUtils.toInputStream(token + " " + userId));
             buffer.writeTo(fileOS);
         } catch (IOException e) {
             log.log(Level.ERROR, "Error during writing data to file", e);

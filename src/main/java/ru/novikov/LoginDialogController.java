@@ -32,7 +32,7 @@ public class LoginDialogController {
         webviewLoginEngine.setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/601.6.17 (KHTML, like Gecko) Version/9.1.1 Safari/601.6.17");
         webviewLoginEngine.load("https://oauth.vk.com/authorize?client_id=" + VK.APP_ID
                 + "&display=page&redirect_uri=" + VK.REDIRECT_URI
-                + "&scope="+ (2 + 4096)
+                + "&scope="+ (2 + 4096 + 65536)
                 + "&response_type=code&v=5.58");
     }
 
