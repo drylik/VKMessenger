@@ -5,7 +5,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import ru.novikov.model.Friend;
 
-public class Controller {
+public class MainController {
     @FXML
     private TableView<Friend> friendsTable;
     @FXML
@@ -16,7 +16,7 @@ public class Controller {
     private Main main;
 
     //вызывается до initialize()
-    public Controller() {
+    public MainController() {
     }
 
     @FXML
