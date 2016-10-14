@@ -45,7 +45,7 @@ public class Main extends Application {
         //TODO: получить от vk список друзей и добавить их в friends
         TransportClient transportClient = HttpTransportClient.getInstance();
         VkApiClient vk = new VkApiClient(transportClient);
-        connectToVK(vk, transportClient);
+        connectToVK(vk);
         int a = 0;
         GetResponse getResponse = null;
         List<UserXtrCounters> friendsList = null;
@@ -134,7 +134,7 @@ public class Main extends Application {
         launch(args);
     }
 
-    public void connectToVK(VkApiClient vk, TransportClient transportClient) {
+    public void connectToVK(VkApiClient vk) {
         //TODO: establish saving data
         AuthResponse authResponse = null;
         String code;
