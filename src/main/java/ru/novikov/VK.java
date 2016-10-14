@@ -23,6 +23,7 @@ public class VK {
     public static final String CLIENT_SECRET = "BNZt6Ed8h3rlSGXxNvP2";
     public static final String REDIRECT_URI = "https://oauth.vk.com/blank.html";
 
+    //TODO: replace data.dat somewhere. Now it's in the root of current hd
     public static final String FILE_NAME = "/data.dat";
     public static final String CRYPT_KEY = "VKMessengerCrypt";
 

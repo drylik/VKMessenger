@@ -7,6 +7,9 @@ import com.vk.api.sdk.exceptions.ApiException;
 import com.vk.api.sdk.exceptions.ClientException;
 import com.vk.api.sdk.httpclient.HttpTransportClient;
 import com.vk.api.sdk.objects.AuthResponse;
+import com.vk.api.sdk.objects.friends.responses.GetResponse;
+import com.vk.api.sdk.objects.users.UserXtrCounters;
+import com.vk.api.sdk.queries.users.UserField;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -24,20 +27,49 @@ import org.apache.logging.log4j.Logger;
 import ru.novikov.model.Friend;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class Main extends Application {
 
     private static Logger log = LogManager.getLogger(Main.class.getName());
 
+    private UserActor actor;
+
     private Stage primaryStage;
     private BorderPane rootLayout;
     private ObservableList<Friend> friends = FXCollections.observableArrayList();
 
-    public Main() {
+    public Main() throws FileNotFoundException {
         //TODO: получить от vk список друзей и добавить их в friends
-        connectToVK();
-        friends.add(new Friend("Анна", "Павлова"));
+        TransportClient transportClient = HttpTransportClient.getInstance();
+        VkApiClient vk = new VkApiClient(transportClient);
+        connectToVK(vk, transportClient);
+        int a = 0;
+        GetResponse getResponse = null;
+        List<UserXtrCounters> friendsList = null;
+        try {
+            getResponse = vk.friends().get(actor).execute();
+            List<String> userIds = new ArrayList<>(getResponse.getCount());
+            for (Object o : getResponse.getItems()) {
+                userIds.add(String.valueOf(o));
+            }
+            friendsList = vk.users().get(actor).userIds(userIds).execute();
+        } catch (ApiException e) {
+            log.log(Level.ERROR, "Api error during getting a response", e);
+        } catch (ClientException e) {
+            log.log(Level.ERROR, "Client error during getting a response", e);
+        }
+        if (friendsList != null) {
+            for (UserXtrCounters friend :
+                    friendsList) {
+                friends.add(new Friend(friend.getFirstName(), friend.getLastName()));
+            }
+        }
     }
+
+
 
     @Override
     public void start(Stage primaryStage) {
@@ -102,29 +134,32 @@ public class Main extends Application {
         launch(args);
     }
 
-    public void connectToVK() {
-        TransportClient transportClient = HttpTransportClient.getInstance();
-        VkApiClient vk = new VkApiClient(transportClient);
-
-        String code = readData();
-        if (code == null) {
-            //TODO: make first time connection
-            showLoginDialog();
-        }
+    public void connectToVK(VkApiClient vk, TransportClient transportClient) {
+        //TODO: establish saving data
         AuthResponse authResponse = null;
+        String code;
+        //actor = readActor();
+        actor = null;
         try {
-            authResponse = vk.oauth()
-                    .userAuthorizationCodeFlow(VK.APP_ID, VK.CLIENT_SECRET, VK.REDIRECT_URI, code)
-                    .execute();
+            if (actor == null) {
+                code = showLoginDialog();
+                if (code != null) {
+                    authResponse = vk.oauth()
+                            .userAuthorizationCodeFlow(VK.APP_ID, VK.CLIENT_SECRET, VK.REDIRECT_URI, code)
+                            .execute();
+                    actor = new UserActor(authResponse.getUserId(), authResponse.getAccessToken());
+                    //writeActor(actor);
+                }
+            }
         } catch (ApiException | ClientException e) {
             log.log(Level.ERROR, "Error during connecting to vk", e);
         }
 
-        UserActor actor = new UserActor(authResponse.getUserId(), authResponse.getAccessToken());
+
     }
 
-    private String readData() {
-        String code = null;
+    private String readActor() {
+        String code;
         File file = new File(VK.FILE_NAME);
         if (!file.exists()) {
             return null;
@@ -137,11 +172,12 @@ public class Main extends Application {
             code = buffer.toString();
         } catch (IOException e) {
             log.log(Level.ERROR, "Error during decryption", e);
+            return null;
         }
         return code;
     }
 
-    private void writeData(String code) {
+    private void writeActor(String code) {
         File file = new File(VK.FILE_NAME);
         OutputStream fileOS;
         try {
@@ -165,13 +201,13 @@ public class Main extends Application {
         alert.showAndWait();
     }
 
-    public boolean showLoginDialog() {
+    public String showLoginDialog() {
         try {
             // Загружаем fxml-файл и создаём новую сцену
             // для всплывающего диалогового окна.
             FXMLLoader loader = new FXMLLoader();
             loader.setLocation(Main.class.getResource("/LoginDialog.fxml"));
-            AnchorPane page = (AnchorPane) loader.load();
+            AnchorPane page = loader.load();
 
             // Создаём диалоговое окно Stage.
             Stage dialogStage = new Stage();
@@ -187,11 +223,17 @@ public class Main extends Application {
 
             // Отображаем диалоговое окно и ждём, пока пользователь его не закроет
             dialogStage.showAndWait();
+            String result = controller.getResult();
+            if (result.contains("error")) {
+                throw new IOException(result);
+            } else {
+                String[] res = result.split("code=");
+                return res[res.length - 1];
+            }
 
-            return controller.getResult();
         } catch (IOException e) {
             log.log(Level.ERROR, "Error during showing login dialog", e);
-            return false;
+            return null;
         }
     }
 }
