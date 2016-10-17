@@ -8,6 +8,8 @@ import com.vk.api.sdk.exceptions.ClientException;
 import com.vk.api.sdk.httpclient.HttpTransportClient;
 import com.vk.api.sdk.objects.AuthResponse;
 import com.vk.api.sdk.objects.friends.responses.GetResponse;
+import com.vk.api.sdk.objects.messages.Message;
+import com.vk.api.sdk.objects.messages.responses.GetHistoryResponse;
 import com.vk.api.sdk.objects.users.UserXtrCounters;
 import com.vk.api.sdk.queries.users.UserField;
 import javafx.application.Application;
@@ -36,15 +38,17 @@ public class Main extends Application {
 
     private String token;
     private Integer userId;
+    private VkApiClient vk;
+    private UserActor actor;
 
     private Stage primaryStage;
     private BorderPane rootLayout;
     private ObservableList<Friend> friends = FXCollections.observableArrayList();
 
-    public Main() throws FileNotFoundException {
+    public Main() {
         TransportClient transportClient = HttpTransportClient.getInstance();
-        VkApiClient vk = new VkApiClient(transportClient);
-        UserActor actor = connectToVK(vk);
+        vk = new VkApiClient(transportClient);
+        actor = connectToVK();
         GetResponse response;
         List<UserXtrCounters> friendsList = null;
         try {
@@ -64,7 +68,7 @@ public class Main extends Application {
         if (friendsList != null) {
             for (UserXtrCounters friend :
                     friendsList) {
-                friends.add(new Friend(friend.getFirstName(), friend.getLastName()));
+                friends.add(new Friend(friend.getFirstName(), friend.getLastName(), friend.getId()));
             }
         }
     }
@@ -81,6 +85,21 @@ public class Main extends Application {
 
     public ObservableList<Friend> getPersonData() {
         return friends;
+    }
+
+    public ObservableList<Message> getMessages(Friend friend) {
+        ObservableList<Message> messages = FXCollections.observableArrayList();
+        try {
+            GetHistoryResponse historyResponse = vk.messages().getHistory(actor)
+                    .userId(String.valueOf(friend.getId()))
+                    .execute();
+            messages.addAll(historyResponse.getItems());
+        } catch (ApiException e) {
+            log.log(Level.ERROR, "Api error during getting a response", e);
+        } catch (ClientException e) {
+            log.log(Level.ERROR, "Client error during getting a response", e);
+        }
+        return messages;
     }
 
     /**
@@ -132,7 +151,7 @@ public class Main extends Application {
         launch(args);
     }
 
-    private UserActor connectToVK(VkApiClient vk) {
+    private UserActor connectToVK() {
         AuthResponse authResponse;
         String code;
         token = null;
