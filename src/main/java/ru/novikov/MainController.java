@@ -1,8 +1,5 @@
 package ru.novikov;
 
-import com.vk.api.sdk.objects.messages.Message;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
@@ -20,6 +17,7 @@ public class MainController {
     private ListView<String> messagesListView;
 
     private Main main;
+    private VK vk;
 
     //вызывается до initialize()
     public MainController() {
@@ -32,7 +30,7 @@ public class MainController {
         lastNameColumn.setCellValueFactory(cellData -> cellData.getValue().lastNameProperty());
 
         // Очистка дополнительной информации об адресате.
-        showFriendsMessages(null);
+        messagesListView.getItems().clear();
 
         // Слушаем изменения выбора, и при изменении отображаем
         // дополнительную информацию об адресате.
@@ -42,16 +40,10 @@ public class MainController {
 
     private void showFriendsMessages(Friend friend) {
         if (friend != null) {
-            ObservableList<Message> messages = main.getMessages(friend);
-            ObservableList<String> messagesTexts = FXCollections.observableArrayList();
-            for (Message message :
-                    messages) {
-                messagesTexts.add(message.getBody());
-            }
-            messagesListView.setItems(messagesTexts);
+            messagesListView.setItems(vk.showFriendsMessages(friend));
         } else {
-            // Если friend = null, то убираем все сообщения.
-            messagesListView.setItems(null);
+            //clear it, if null
+            messagesListView.getItems().clear();
         }
     }
 
@@ -60,5 +52,9 @@ public class MainController {
 
         // Добавление в таблицу данных из наблюдаемого списка
         friendsTable.setItems(main.getPersonData());
+    }
+
+    public void setVk(VK vk) {
+        this.vk = vk;
     }
 }
