@@ -25,15 +25,15 @@ public class MainController {
 
     @FXML
     private void initialize() {
-        // Инициализация таблицы адресатов с двумя столбцами.
+        // Инициализация таблицы друзей с двумя столбцами.
         firstNameColumn.setCellValueFactory(cellData -> cellData.getValue().firstNameProperty());
         lastNameColumn.setCellValueFactory(cellData -> cellData.getValue().lastNameProperty());
 
-        // Очистка дополнительной информации об адресате.
+        // Очистка списка сообщений с другом.
         messagesListView.getItems().clear();
 
         // Слушаем изменения выбора, и при изменении отображаем
-        // дополнительную информацию об адресате.
+        // сообщения диалога с другом.
         friendsTable.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> showFriendsMessages(newValue));
     }

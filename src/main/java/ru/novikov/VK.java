@@ -43,18 +43,12 @@ public class VK {
 
     private Friend currentFriend;
 
-    public VkApiClient getVk() {
-        return vk;
-    }
-
-    public UserActor getActor() {
-        return actor;
-    }
-
     public VK(Main main) {
         TransportClient transportClient = HttpTransportClient.getInstance();
         vk = new VkApiClient(transportClient);
         actor = connectToVK(main);
+        //TODO: разобаться с getLongPollHistory
+        //vk.messages().getLongPollServer(actor);
     }
 
     private UserActor connectToVK(Main main) {
@@ -163,7 +157,7 @@ public class VK {
                 messages) {
             messagesTexts.add(message.getBody());
         }
-        return messagesTexts; //main.messagesListView.setItems(messagesTexts);
+        return messagesTexts;
     }
 
     public void sendMessage(String message){

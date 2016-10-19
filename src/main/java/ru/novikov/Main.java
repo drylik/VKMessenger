@@ -136,12 +136,13 @@ public class Main extends Application {
             Scene scene = new Scene(page);
             dialogStage.setScene(scene);
 
-            // Создаём контроллер контроллер.
+            // Создаём контроллер.
             LoginDialogController controller = loader.getController();
             controller.setDialogStage(dialogStage);
 
             // Отображаем диалоговое окно и ждём, пока пользователь его не закроет
             dialogStage.showAndWait();
+            //вернувшийся результат - адресная строка, достаём code.
             String result = controller.getResult();
             if (result.contains("error")) {
                 throw new IOException(result);
